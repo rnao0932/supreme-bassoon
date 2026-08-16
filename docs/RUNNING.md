@@ -51,9 +51,18 @@ net8.0-windows` to get the build that can also talk to real QuickBooks.
 You can build these anywhere — including from Linux or macOS — because the Windows projects
 cross-compile. They are self-contained, so the workstation does not need the .NET runtime installed.
 
-**Match the bitness to the installed QuickBooks SDK.** A 64-bit process cannot load a 32-bit
-`QBXMLRP2.RequestProcessor`. If you get that wrong the error message tells you so, but it is easier
-to check first.
+**Match the bitness to the installed QuickBooks.** A 64-bit process cannot load a 32-bit
+`QBXMLRP2.RequestProcessor`, and the failure is an unhelpful `REGDB_E_CLASSNOTREG`.
+
+Intuit shipped no 64-bit QuickBooks Desktop until the 2022 release, so:
+
+| Installed QuickBooks | Publish with |
+| --- | --- |
+| 2021 and earlier (32-bit) | `-r win-x86` |
+| 2022 and later (64-bit) | `-r win-x64` |
+
+If unsure, check Help > About in QuickBooks, or just try `win-x86` first — an older
+installation is the more common case.
 
 ```bash
 # 64-bit (most current installations)

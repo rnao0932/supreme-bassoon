@@ -57,10 +57,11 @@
       <StackPanel>
 
         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-          <Button Content="Connect" Command="{Binding ConnectCommand}" />
+          <Button Content="Connect to QuickBooks" Command="{Binding ConnectCommand}" MinWidth="160"
+                  ToolTip="Connects to the company file QuickBooks currently has open." />
+          <Button Content="Open simulated company" Command="{Binding ConnectSimulatedCommand}" MinWidth="170"
+                  ToolTip="Explore the application against a small fake company. QuickBooks is not contacted." />
           <Button Content="Disconnect" Command="{Binding DisconnectCommand}" />
-          <CheckBox Content="Use simulated company (no QuickBooks)" IsChecked="{Binding UseSimulator}"
-                    IsEnabled="{Binding IsIdle}" />
           <Border Width="1" Background="#CCCCCC" Margin="10,2" />
           <CheckBox Content="A current QuickBooks backup exists" IsChecked="{Binding BackupConfirmed}" />
           <TextBlock Text="{Binding BackupConfirmedText}" Style="{StaticResource FieldLabel}" Foreground="#666666" />

@@ -45,7 +45,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool _isBusy;
     private bool _writeModeEnabled;
     private bool _backupConfirmed;
-    private bool _useSimulator;
     private bool _isConnected;
     private DateTime _fromDate = new(DateTime.Today.Year, 1, 1);
     private DateTime _toDate = DateTime.Today;
@@ -65,7 +64,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public MainViewModel()
     {
-        ConnectCommand = new RelayCommand(() => _ = ConnectAsync(), () => !IsBusy && !IsConnected);
+        // Two explicit commands rather than one button plus a "use the simulator" checkbox. The
+        // checkbox was easy to miss, and missing it meant an attempt against real QuickBooks and a
+        // COM error, which is a poor way to learn you wanted the other mode.
+        ConnectCommand = new RelayCommand(() => _ = ConnectAsync(simulate: false), () => !IsBusy && !IsConnected);
+        ConnectSimulatedCommand = new RelayCommand(() => _ = ConnectAsync(simulate: true), () => !IsBusy && !IsConnected);
         DisconnectCommand = new RelayCommand(Disconnect, () => !IsBusy && IsConnected);
         PreviewCommand = new RelayCommand(() => _ = PreviewAsync(), () => !IsBusy && IsConnected && CanPreview);
         SelectAllCommand = new RelayCommand(() => SetSelection(true), () => !IsBusy && Rows.Count > 0);
@@ -83,6 +86,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<QbAccount> Accounts { get; } = [];
 
     public RelayCommand ConnectCommand { get; }
+    public RelayCommand ConnectSimulatedCommand { get; }
     public RelayCommand DisconnectCommand { get; }
     public RelayCommand PreviewCommand { get; }
     public RelayCommand SelectAllCommand { get; }
@@ -141,12 +145,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 RefreshCommands();
             }
         }
-    }
-
-    public bool UseSimulator
-    {
-        get => _useSimulator;
-        set => Set(ref _useSimulator, value);
     }
 
     /// <summary>
@@ -316,15 +314,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     // ---------------------------------------------------------------- operations
 
-    private async Task ConnectAsync()
+    private async Task ConnectAsync(bool simulate)
     {
         IsBusy = true;
-        StatusText = "Connecting to QuickBooks...";
+        StatusText = simulate
+            ? "Opening the simulated company..."
+            : "Connecting to QuickBooks...";
 
         try
         {
             var wantsWrite = WriteModeEnabled;
-            var simulate = UseSimulator;
 
             var session = await _worker.RunAsync<IQbSession>(() => simulate
                 ? new SimulatedQbSession(DemoCompany.Build(), readOnly: !wantsWrite)
@@ -722,6 +721,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private void RefreshCommands()
     {
         ConnectCommand.RaiseCanExecuteChanged();
+        ConnectSimulatedCommand.RaiseCanExecuteChanged();
         DisconnectCommand.RaiseCanExecuteChanged();
         PreviewCommand.RaiseCanExecuteChanged();
         SelectAllCommand.RaiseCanExecuteChanged();
