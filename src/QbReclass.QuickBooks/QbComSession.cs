@@ -9,14 +9,29 @@ using QbReclass.Core.Session;
 
 namespace QbReclass.QuickBooks;
 
-/// <summary>How the utility attaches to QuickBooks.</summary>
+/// <summary>
+/// How the utility attaches to QuickBooks.
+/// </summary>
+/// <remarks>
+/// These are this application's own names, not the SDK's numbering. Published descriptions of
+/// <c>QBXMLRPConnectionType</c> disagree about whether it is 0-based or 1-based, and passing the
+/// wrong value produces "The requested connection type could not be found". The default path
+/// therefore calls <c>OpenConnection</c>, which takes no connection-type argument at all; see
+/// <see cref="QbComSession.OpenConnection"/>.
+/// </remarks>
 public enum QbConnectionType
 {
-    /// <summary>QuickBooks must already be running with the company file open.</summary>
+    /// <summary>
+    /// QuickBooks must already be running with the company file open. Opened through
+    /// <c>OpenConnection</c>, so no connection-type constant is involved.
+    /// </summary>
     LocalAlreadyRunning = 0,
 
-    /// <summary>QuickBooks may be launched without its user interface to service the request.</summary>
-    LocalLaunchIfNeeded = 2,
+    /// <summary>
+    /// QuickBooks may be started to service the request. Needs <c>OpenConnection2</c> and therefore
+    /// the SDK's constant, which is discovered by attempt rather than assumed.
+    /// </summary>
+    LocalLaunchIfNeeded = 1,
 }
 
 /// <summary>How the company file should be opened.</summary>
@@ -124,7 +139,7 @@ public sealed class QbComSession : IQbSession
 
         try
         {
-            Invoke(processor, "OpenConnection2", string.Empty, options.ApplicationName, (int)options.ConnectionType);
+            OpenConnection(processor, options);
             connectionOpen = true;
 
             ticket = Invoke(processor, "BeginSession", options.CompanyFilePath, (int)options.FileMode) as string
@@ -268,6 +283,62 @@ public sealed class QbComSession : IQbSession
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Opens the connection to the request processor.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The ordinary case uses <c>OpenConnection</c>, whose signature is
+    /// <c>(appID, appName)</c> — it always opens a local connection and needs no connection-type
+    /// constant. That matters because <c>QBXMLRPConnectionType</c>'s numbering is inconsistently
+    /// documented: passing 0 for "local" against QuickBooks Desktop 2021 is rejected with "The
+    /// requested connection type could not be found". Not naming the constant cannot be wrong.
+    /// </para>
+    /// <para>
+    /// Starting QuickBooks on demand does require <c>OpenConnection2</c>, so there the candidate
+    /// values are tried in turn and the first accepted one is used. Every candidate names a
+    /// <i>local</i> connection under one numbering or the other, so a wrong guess fails to connect
+    /// rather than reaching somewhere unintended.
+    /// </para>
+    /// </remarks>
+    private static void OpenConnection(object processor, QbConnectionOptions options)
+    {
+        if (options.ConnectionType == QbConnectionType.LocalAlreadyRunning)
+        {
+            Invoke(processor, "OpenConnection", string.Empty, options.ApplicationName);
+            return;
+        }
+
+        // localQBDLaunchUI is 2 where the enum starts at 0 and 3 where it starts at 1.
+        Exception? lastFailure = null;
+
+        foreach (var candidate in new[] { 2, 3 })
+        {
+            try
+            {
+                Invoke(processor, "OpenConnection2", string.Empty, options.ApplicationName, candidate);
+                return;
+            }
+            catch (Exception ex)
+            {
+                lastFailure = ex;
+            }
+        }
+
+        // Every candidate was rejected; fall back to the connection that needs no constant. It
+        // cannot start QuickBooks, so the caller gets a plain "QuickBooks is not running" rather
+        // than a confusing one about connection types.
+        try
+        {
+            Invoke(processor, "OpenConnection", string.Empty, options.ApplicationName);
+        }
+        catch (Exception ex)
+        {
+            throw new QbSessionException(
+                QbConnectionDiagnostics.Describe(lastFailure ?? ex, ProgId), ex);
+        }
     }
 
     private static IReadOnlyList<string> ReadSupportedVersions(object processor, string ticket)

@@ -116,3 +116,18 @@ that the code makes safe rather than a fact.
   EIN, because the SDK exposes no company-file GUID. A file restored to a different path produces a
   different fingerprint and the user is re-prompted — deliberately conservative.
 - **How to answer:** check whether the target edition exposes anything more stable; if so, prefer it.
+
+### 11. What is the correct QBXMLRPConnectionType numbering on the target edition?
+
+- **Status:** partially answered, the hard way.
+- **What happened:** passing `0` for a local connection to `OpenConnection2` against QuickBooks
+  Desktop Pro 2021 was rejected with "The requested connection type could not be found". Published
+  descriptions of `QBXMLRPConnectionType` disagree about whether the enum is 0-based or 1-based.
+- **Current state:** the ordinary path no longer names the constant at all. `OpenConnection`, whose
+  signature is `(appID, appName)`, always opens a local connection. Only the start-QuickBooks-on-
+  demand path needs `OpenConnection2`, and there the candidates are tried in turn rather than
+  assumed.
+- **Still to confirm:** which value the launch-UI connection actually accepts on the target edition.
+  The spike reports it once that path is exercised.
+- **Lesson worth keeping:** this is exactly the class of assumption section 4 warns about. It cost
+  one round trip against real QuickBooks and would have cost nothing to discover in Phase 0.
