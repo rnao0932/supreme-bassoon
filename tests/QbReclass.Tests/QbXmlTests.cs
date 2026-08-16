@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Xml.Linq;
 using QbReclass.Core.Adapters;
 using QbReclass.Core.Model;
@@ -203,6 +204,89 @@ public sealed class QbXmlTests
         var order = request.Elements().Select(e => e.Name.LocalName).ToList();
         Assert.Equal("MaxReturned", order[0]);
         Assert.Equal("IncludeLineItems", order[^1]);
+    }
+
+    /// <summary>
+    /// qbXML amounts and dates are wire format, not display format: they must use a dot decimal
+    /// separator and ISO dates whatever locale the workstation runs in. An accountant in a
+    /// comma-decimal locale must not send QuickBooks "118,00".
+    /// </summary>
+    /// <remarks>
+    /// The application deliberately does <b>not</b> set <c>InvariantGlobalization</c> — doing so
+    /// leaves only the invariant culture, and WPF's DatePicker and DataGrid throw during layout
+    /// when they cannot resolve a specific culture. Culture independence therefore has to come
+    /// from the serialization code naming <see cref="CultureInfo.InvariantCulture"/>, which is
+    /// what this pins down.
+    /// </remarks>
+    [Theory]
+    [InlineData("de-DE")]
+    [InlineData("fr-FR")]
+    [InlineData("en-US")]
+    public void QbXmlUsesInvariantNumberAndDateFormatsWhateverTheLocale(string cultureName)
+    {
+        var original = CultureInfo.CurrentCulture;
+
+        try
+        {
+            CultureInfo.CurrentCulture = new CultureInfo(cultureName);
+
+            var company = TestCompanies.Standard(out _, out var destination, out _);
+            var txn = company.Transactions.Single(t => t.RefNumber == "1002");
+
+            var request = new CreditCardChargeAdapter()
+                .BuildReclassification(txn, [txn.Lines[0].TxnLineId!], QbRef.FromAccount(destination));
+
+            var xml = QbXmlRequestBuilder.Envelope(request, "16.0");
+
+            Assert.Contains("<Amount>118.00</Amount>", xml, StringComparison.Ordinal);
+            Assert.Contains("<Amount>44.25</Amount>", xml, StringComparison.Ordinal);
+            Assert.DoesNotContain("118,00", xml, StringComparison.Ordinal);
+
+            var query = QbXmlRequestBuilder.Envelope(
+                QbXmlRequestBuilder.TransactionQuery(
+                    TransactionType.CreditCardCharge,
+                    new DateOnly(2024, 3, 4),
+                    new DateOnly(2024, 12, 31),
+                    new JobFilters(),
+                    new QueryPage(50)),
+                "16.0");
+
+            Assert.Contains("<FromTxnDate>2024-03-04</FromTxnDate>", query, StringComparison.Ordinal);
+            Assert.Contains("<ToTxnDate>2024-12-31</ToTxnDate>", query, StringComparison.Ordinal);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = original;
+        }
+    }
+
+    /// <summary>
+    /// The preflight snapshot hash is compared across processes and across restarts, so it must not
+    /// depend on the locale the workstation happens to run in.
+    /// </summary>
+    [Fact]
+    public void TheSnapshotHashIsIdenticalAcrossLocales()
+    {
+        var original = CultureInfo.CurrentCulture;
+        var hashes = new List<string>();
+
+        try
+        {
+            foreach (var cultureName in new[] { "en-US", "de-DE", "fr-FR", "ja-JP" })
+            {
+                CultureInfo.CurrentCulture = new CultureInfo(cultureName);
+
+                var company = TestCompanies.Standard(out _, out _, out _);
+                hashes.Add(ProtectedFields.ComputeSnapshotHash(
+                    company.Transactions.Single(t => t.RefNumber == "1002")));
+            }
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = original;
+        }
+
+        Assert.Single(hashes.Distinct(StringComparer.Ordinal));
     }
 
     [Fact]

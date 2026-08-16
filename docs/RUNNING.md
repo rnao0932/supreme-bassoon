@@ -156,3 +156,5 @@ QuickBooks identifiers — handle them accordingly.
 | "Job is bound to X but QuickBooks has Y open" | Working. The company file changed; the job refuses to run against a different one. |
 | "Write mode requires --backup-confirmed" | Working. Take a backup, then pass the flag. |
 | "A live QuickBooks session is only available in a Windows build" | You are running the `net8.0` CLI build. Republish with `-f net8.0-windows`, or use `--simulate`. |
+| "Cannot find non-neutral culture related to 'en-us'" | Fixed. If you are on a copy from before that fix, delete the `<InvariantGlobalization>true</InvariantGlobalization>` line from `Directory.Build.props`. Setting it leaves .NET with only the invariant culture, and WPF's DatePicker and DataGrid resolve a specific culture during layout. |
+| `MSBUILD : error MSB1009: Project file does not exist` | The terminal is not in the project folder. `cd` there first — a `cd` only applies to the window you typed it in. |

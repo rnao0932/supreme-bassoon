@@ -5,7 +5,21 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsNotAsErrors>NU1701</WarningsNotAsErrors>
-    <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!--
+      InvariantGlobalization is deliberately NOT set.
+
+      Turning it on stops .NET loading ICU, which leaves only the invariant culture. WPF resolves a
+      specific culture from the framework element's Language via XmlLanguage.GetSpecificCulture();
+      DatePicker and DataGrid both do this during layout, and with no culture data the lookup throws
+      "Cannot find non-neutral culture related to 'en-us'" before the main window can render.
+
+      Nothing here needs the switch. Every boundary where a stable representation matters - qbXML
+      serialization, the preflight snapshot hash, CSV export, command-line parsing - names
+      CultureInfo.InvariantCulture explicitly, and the desktop application should format dates and
+      amounts for the operator's own locale rather than an invariant one.
+    -->
+
     <!-- Allows the net8.0-windows / WPF projects to be compiled on a non-Windows
          build agent. It does not allow them to run there. -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
