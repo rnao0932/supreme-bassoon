@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>QbReclass.Cli</RootNamespace>
+    <AssemblyName>qbreclass</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../QbReclass.Core/QbReclass.Core.csproj" />
+    <ProjectReference Include="../QbReclass.Simulator/QbReclass.Simulator.csproj" />
+  </ItemGroup>
+
+  <!-- The live QuickBooks session is only linked in on Windows; on other hosts the
+       CLI still builds and runs against the simulator. -->
+  <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
+    <ProjectReference Include="../QbReclass.QuickBooks/QbReclass.QuickBooks.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <DefineConstants>$(DefineConstants);QB_LIVE_SESSION</DefineConstants>
+  </PropertyGroup>
+
+</Project>

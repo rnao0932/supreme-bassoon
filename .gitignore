@@ -1,0 +1,11 @@
+bin/
+obj/
+*.user
+.vs/
+artifacts/
+TestResults/
+*.db
+*.db-shm
+*.db-wal
+spike-report-*.json
+spike-report-*.md

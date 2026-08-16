@@ -1,0 +1,33 @@
+<Application x:Class="QbReclass.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:QbReclass.App"
+             StartupUri="MainWindow.xaml">
+  <Application.Resources>
+
+    <local:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+    <local:StringToVisibilityConverter x:Key="StringToVisibility" />
+
+    <Style TargetType="TextBlock" x:Key="SectionHeading">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,0,0,6" />
+    </Style>
+
+    <Style TargetType="TextBlock" x:Key="FieldLabel">
+      <Setter Property="Margin" Value="0,0,8,4" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style TargetType="Button">
+      <Setter Property="Padding" Value="12,5" />
+      <Setter Property="Margin" Value="0,0,8,0" />
+      <Setter Property="MinWidth" Value="90" />
+    </Style>
+
+    <Style TargetType="CheckBox">
+      <Setter Property="Margin" Value="0,3,12,3" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+  </Application.Resources>
+</Application>

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Windows-only: binds to the QBXMLRP2 COM request processor installed by the
+         QuickBooks Desktop SDK. Compiles on any host, runs only on Windows. -->
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>QbReclass.QuickBooks</RootNamespace>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../QbReclass.Core/QbReclass.Core.csproj" />
+  </ItemGroup>
+
+</Project>

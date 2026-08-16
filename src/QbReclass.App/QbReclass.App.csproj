@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>QbReclass.App</RootNamespace>
+    <AssemblyName>QbReclass</AssemblyName>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../QbReclass.Core/QbReclass.Core.csproj" />
+    <ProjectReference Include="../QbReclass.QuickBooks/QbReclass.QuickBooks.csproj" />
+    <ProjectReference Include="../QbReclass.Simulator/QbReclass.Simulator.csproj" />
+  </ItemGroup>
+
+</Project>

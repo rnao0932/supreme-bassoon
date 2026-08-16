@@ -1,0 +1,64 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{19C86B08-65A7-42A9-AE53-1A5306E69642}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QbReclass.Core", "src\QbReclass.Core\QbReclass.Core.csproj", "{565E0510-CB28-4261-9DAF-BB044700F82E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QbReclass.QuickBooks", "src\QbReclass.QuickBooks\QbReclass.QuickBooks.csproj", "{A3ACAD15-8188-488F-ACBA-77D229594786}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QbReclass.Simulator", "src\QbReclass.Simulator\QbReclass.Simulator.csproj", "{C8ED453C-5D91-4015-ABF9-1BFC52F9CBAB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QbReclass.Cli", "src\QbReclass.Cli\QbReclass.Cli.csproj", "{8E9338AB-E1E0-48D0-9162-92DB8418877D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QbReclass.App", "src\QbReclass.App\QbReclass.App.csproj", "{4896085E-31D5-4394-BEB0-4CC7B3E826A9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0241B36D-44DB-4728-B357-33D4CF2FD2D7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QbReclass.Tests", "tests\QbReclass.Tests\QbReclass.Tests.csproj", "{EE885C0E-12CE-41B7-B3EF-860FE1A65AE2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{565E0510-CB28-4261-9DAF-BB044700F82E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{565E0510-CB28-4261-9DAF-BB044700F82E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{565E0510-CB28-4261-9DAF-BB044700F82E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{565E0510-CB28-4261-9DAF-BB044700F82E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3ACAD15-8188-488F-ACBA-77D229594786}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3ACAD15-8188-488F-ACBA-77D229594786}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3ACAD15-8188-488F-ACBA-77D229594786}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3ACAD15-8188-488F-ACBA-77D229594786}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8ED453C-5D91-4015-ABF9-1BFC52F9CBAB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8ED453C-5D91-4015-ABF9-1BFC52F9CBAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8ED453C-5D91-4015-ABF9-1BFC52F9CBAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8ED453C-5D91-4015-ABF9-1BFC52F9CBAB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E9338AB-E1E0-48D0-9162-92DB8418877D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E9338AB-E1E0-48D0-9162-92DB8418877D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E9338AB-E1E0-48D0-9162-92DB8418877D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E9338AB-E1E0-48D0-9162-92DB8418877D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4896085E-31D5-4394-BEB0-4CC7B3E826A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4896085E-31D5-4394-BEB0-4CC7B3E826A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4896085E-31D5-4394-BEB0-4CC7B3E826A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4896085E-31D5-4394-BEB0-4CC7B3E826A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE885C0E-12CE-41B7-B3EF-860FE1A65AE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE885C0E-12CE-41B7-B3EF-860FE1A65AE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE885C0E-12CE-41B7-B3EF-860FE1A65AE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE885C0E-12CE-41B7-B3EF-860FE1A65AE2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{565E0510-CB28-4261-9DAF-BB044700F82E} = {19C86B08-65A7-42A9-AE53-1A5306E69642}
+		{A3ACAD15-8188-488F-ACBA-77D229594786} = {19C86B08-65A7-42A9-AE53-1A5306E69642}
+		{C8ED453C-5D91-4015-ABF9-1BFC52F9CBAB} = {19C86B08-65A7-42A9-AE53-1A5306E69642}
+		{8E9338AB-E1E0-48D0-9162-92DB8418877D} = {19C86B08-65A7-42A9-AE53-1A5306E69642}
+		{4896085E-31D5-4394-BEB0-4CC7B3E826A9} = {19C86B08-65A7-42A9-AE53-1A5306E69642}
+		{EE885C0E-12CE-41B7-B3EF-860FE1A65AE2} = {0241B36D-44DB-4728-B357-33D4CF2FD2D7}
+	EndGlobalSection
+EndGlobal
