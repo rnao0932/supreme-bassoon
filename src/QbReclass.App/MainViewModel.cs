@@ -60,7 +60,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private int _batchSize = 25;
     private bool _continueOnIsolatedFailure;
     private CandidateRow? _selectedRow;
-    private string _clearedNotice = string.Empty;
 
     public MainViewModel()
     {
@@ -84,6 +83,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<CandidateRow> Rows { get; } = [];
 
     public ObservableCollection<QbAccount> Accounts { get; } = [];
+
+    /// <summary>
+    /// Things the operator needs to know about this preview that the grid cannot show: a
+    /// reconciliation status QuickBooks did not report, a chart of accounts with nothing
+    /// reclassifiable in it. Shown as banners above the grid.
+    /// </summary>
+    public ObservableCollection<string> Notices { get; } = [];
 
     public RelayCommand ConnectCommand { get; }
     public RelayCommand ConnectSimulatedCommand { get; }
@@ -112,12 +118,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         get => _detailText;
         private set => Set(ref _detailText, value);
-    }
-
-    public string ClearedNotice
-    {
-        get => _clearedNotice;
-        private set => Set(ref _clearedNotice, value);
     }
 
     public bool IsBusy
@@ -341,10 +341,30 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
             var accounts = await _worker.RunAsync(() => _query.LoadAccounts());
 
+            Notices.Clear();
             Accounts.Clear();
-            foreach (var account in accounts.Where(a => a.IsExpenseSide).OrderBy(a => a.FullName, StringComparer.Ordinal))
+
+            // Every account is listed, expense-side ones first, rather than silently filtering to
+            // the types this build recognizes. A chart of accounts using a type not in that set
+            // would otherwise produce an empty dropdown and no way to tell why. Choosing an
+            // unsuitable destination is caught by Job.Validate with a message that names the type.
+            foreach (var account in accounts
+                         .OrderByDescending(a => a.IsExpenseSide)
+                         .ThenByDescending(a => a.IsActive)
+                         .ThenBy(a => a.FullName, StringComparer.Ordinal))
             {
                 Accounts.Add(account);
+            }
+
+            var reclassifiable = accounts.Count(a => a.IsExpenseSide && a.IsActive);
+            if (reclassifiable == 0)
+            {
+                Notices.Add(
+                    $"None of the {accounts.Count} accounts QuickBooks returned is an active "
+                    + "expense-side account, so there is nothing this rule can reclassify to. The "
+                    + "account types seen were: "
+                    + string.Join(", ", accounts.Select(a => a.AccountType).Distinct(StringComparer.Ordinal).OrderBy(t => t, StringComparer.Ordinal))
+                    + ".");
             }
 
             CompanyDisplay =
@@ -352,7 +372,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 + $"qbXML {session.Info.QbXmlVersion}   |   {(session.Info.IsReadOnly ? "READ-ONLY SESSION" : "write enabled")}";
 
             IsConnected = true;
-            StatusText = $"Connected. {Accounts.Count} expense-side account(s) available.";
+            StatusText = $"Connected. {Accounts.Count} account(s) loaded, {reclassifiable} of them reclassifiable.";
 
             await ReconcileInterruptedWorkAsync();
         }
@@ -418,6 +438,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         Rows.Clear();
         Accounts.Clear();
+        Notices.Clear();
         IsConnected = false;
         CompanyDisplay = "Not connected";
         StatusText = "Disconnected.";
@@ -469,10 +490,21 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 Rows.Add(row);
             }
 
-            ClearedNotice = plan.ClearedStatusUnavailable
-                ? "QuickBooks did not report a reconciliation status for these records, so the "
-                  + "reconciled count is not available. Treat every record as potentially reconciled."
-                : string.Empty;
+            Notices.Clear();
+
+            if (plan.ClearedStatusUnavailable)
+            {
+                Notices.Add(
+                    "QuickBooks did not report a reconciliation status for these records, so the "
+                    + "reconciled count is not available. Treat every record as potentially reconciled.");
+            }
+
+            if (plan.UnsupportedCount > 0)
+            {
+                Notices.Add(
+                    $"{plan.UnsupportedCount} of {plan.MatchCount} matching line(s) cannot be changed "
+                    + "by this utility and are shown for review only. Click one to see why.");
+            }
 
             StatusText =
                 $"Preview complete: {plan.MatchCount:N0} line(s) across {plan.TransactionsExamined:N0} "

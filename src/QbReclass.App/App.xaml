@@ -8,6 +8,30 @@
     <local:BoolToVisibilityConverter x:Key="BoolToVisibility" />
     <local:StringToVisibilityConverter x:Key="StringToVisibility" />
 
+    <!--
+      Accounts show their QuickBooks type alongside the name. The rule only makes sense against an
+      expense-side account, and naming the type in the list is how someone spots that they have
+      picked a bank or income account before the validation message tells them.
+    -->
+    <DataTemplate x:Key="AccountItem">
+      <StackPanel Orientation="Horizontal">
+        <TextBlock Text="{Binding FullName}" />
+        <TextBlock Text="{Binding AccountType}" Foreground="#777777" Margin="10,0,0,0" />
+        <TextBlock Text="inactive" Foreground="#B00000" Margin="8,0,0,0" FontStyle="Italic">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock">
+              <Setter Property="Visibility" Value="Collapsed" />
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding IsActive}" Value="False">
+                  <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+        </TextBlock>
+      </StackPanel>
+    </DataTemplate>
+
     <Style TargetType="TextBlock" x:Key="SectionHeading">
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Margin" Value="0,0,0,6" />
