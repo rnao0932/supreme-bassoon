@@ -58,29 +58,31 @@ normalized models, which is what makes the safety behaviour testable without Qui
 
 ## Building and running
 
+Full instructions, including how to get binaries onto a client workstation, are in
+**[docs/RUNNING.md](docs/RUNNING.md)**. The short version:
+
 ```bash
-dotnet build QbReclass.sln
-dotnet test  QbReclass.sln
+dotnet test QbReclass.sln                                    # 59 tests
+dotnet run --project src/QbReclass.Cli -f net8.0 -- demo     # the whole workflow, simulated
 ```
 
-The solution builds on Linux and macOS as well as Windows — `EnableWindowsTargeting` lets the
-`net8.0-windows` and WPF projects compile anywhere, though they only *run* on Windows. The core,
-the simulator, the CLI and the whole test suite run on any platform.
+That needs only the .NET 8 SDK — no QuickBooks, no Windows. `demo` runs preview, batch approval,
+execution, verification and audit against a simulated company and prints the result.
 
-See the whole workflow end to end, against a simulated company, on any machine:
+Everything cross-compiles, so the Windows binaries can be produced from any machine and are
+self-contained (the workstation needs no .NET runtime):
 
 ```bash
-dotnet run --project src/QbReclass.Cli -- demo
+dotnet publish src/QbReclass.Cli -c Release -f net8.0-windows -r win-x64 --self-contained true -o out/cli
+dotnet publish src/QbReclass.App -c Release                   -r win-x64 --self-contained true -o out/app
 ```
 
-Against real QuickBooks (Windows, with QuickBooks running and the company file open):
+Use `-r win-x86` instead if the workstation's QuickBooks SDK is 32-bit — the process bitness must
+match the registered request processor. On the workstation, with QuickBooks open on a **disposable
+copy** of the company file:
 
-```bash
-qbreclass spike --report spike-report.md      # do this first
-qbreclass accounts
-qbreclass preview --from 2024-01-01 --to 2024-12-31 --source <ListID> --dest <ListID>
-qbreclass run     --from 2024-01-01 --to 2024-12-31 --source <ListID> --dest <ListID> \
-                  --allow-write --backup-confirmed --batch-size 25
+```
+qbreclass.exe spike --report spike-read.md      # do this first
 ```
 
 `qbreclass` with no arguments prints the full option list.
@@ -135,6 +137,7 @@ Faithful to specification section 5 and FR-018:
 
 ## Documentation
 
+- [docs/RUNNING.md](docs/RUNNING.md) — how to build, deploy and drive it
 - [docs/PHASE0-SPIKE.md](docs/PHASE0-SPIKE.md) — what to run first, and what to record
 - [docs/OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md) — specification section 22, carried forward
 - [docs/SPEC-TRACEABILITY.md](docs/SPEC-TRACEABILITY.md) — every FR and acceptance criterion mapped to code and tests

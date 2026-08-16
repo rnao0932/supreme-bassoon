@@ -2,9 +2,23 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>QbReclass.Cli</RootNamespace>
     <AssemblyName>qbreclass</AssemblyName>
+
+    <!--
+      Two targets on purpose.
+
+      net8.0-windows is the one that matters on a client workstation: it can reference
+      QbReclass.QuickBooks and therefore carries the live COM session, which is what the Phase 0
+      spike needs. net8.0 exists so the same tool - preview, planning, export, and the whole
+      workflow against the simulator - runs on a machine with no QuickBooks and no Windows.
+
+      This is deliberately keyed to the target framework rather than to the build host. Keying it
+      to the host would mean a Windows build could not compile at all (a net8.0 project cannot
+      reference a net8.0-windows one) and a cross-published Windows binary would quietly ship
+      without the live session.
+    -->
+    <TargetFrameworks>net8.0;net8.0-windows</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,13 +26,11 @@
     <ProjectReference Include="../QbReclass.Simulator/QbReclass.Simulator.csproj" />
   </ItemGroup>
 
-  <!-- The live QuickBooks session is only linked in on Windows; on other hosts the
-       CLI still builds and runs against the simulator. -->
-  <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
     <ProjectReference Include="../QbReclass.QuickBooks/QbReclass.QuickBooks.csproj" />
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
     <DefineConstants>$(DefineConstants);QB_LIVE_SESSION</DefineConstants>
   </PropertyGroup>
 
