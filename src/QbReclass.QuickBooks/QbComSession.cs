@@ -103,12 +103,21 @@ public sealed class QbComSession : IQbSession
 
         var type = Type.GetTypeFromProgID(ProgId, throwOnError: false)
             ?? throw new QbSessionException(
-                $"The QuickBooks Desktop SDK component '{ProgId}' is not registered on this machine. "
-                + "Install the QuickBooks Desktop SDK, and confirm its bitness matches this "
-                + "application's (a 64-bit process cannot load a 32-bit request processor).");
+                QbConnectionDiagnostics.Guidance(QbConnectionDiagnostics.ClassNotRegistered, ProgId)!);
 
-        var processor = Activator.CreateInstance(type)
-            ?? throw new QbSessionException($"Could not create an instance of '{ProgId}'.");
+        object processor;
+        try
+        {
+            // Deliberately inside a guard. A machine without the SDK reaches exactly here, and the
+            // bare COM failure ("Retrieving the COM class factory ... 80040154 Class not
+            // registered") is the least useful message the application can show on a first run.
+            processor = Activator.CreateInstance(type)
+                ?? throw new QbSessionException($"Could not create an instance of '{ProgId}'.");
+        }
+        catch (Exception ex) when (ex is not QbSessionException)
+        {
+            throw new QbSessionException(QbConnectionDiagnostics.Describe(ex, ProgId), ex);
+        }
 
         string ticket;
         var connectionOpen = false;
@@ -128,7 +137,7 @@ public sealed class QbComSession : IQbSession
                 TryInvoke(processor, "CloseConnection");
             }
 
-            throw new QbSessionException(TranslateComFailure(ex), ex);
+            throw new QbSessionException(QbConnectionDiagnostics.Describe(ex, ProgId), ex);
         }
 
         var versions = ReadSupportedVersions(processor, ticket);
@@ -199,7 +208,7 @@ public sealed class QbComSession : IQbSession
         }
         catch (Exception ex) when (ex is not QbSessionException)
         {
-            throw new QbSessionException(TranslateComFailure(ex), ex);
+            throw new QbSessionException(QbConnectionDiagnostics.Describe(ex, ProgId), ex);
         }
     }
 
@@ -302,43 +311,6 @@ public sealed class QbComSession : IQbSession
             // Optional capability the installed request processor does not expose.
             return null;
         }
-    }
-
-    /// <summary>
-    /// Turns a COM failure into something an accountant can act on. The raw HRESULT text from the
-    /// request processor is unhelpful on its own.
-    /// </summary>
-    private static string TranslateComFailure(Exception ex)
-    {
-        var message = ex is TargetInvocationException { InnerException: { } inner } ? inner.Message : ex.Message;
-
-        if (message.Contains("0x80040408", StringComparison.OrdinalIgnoreCase)
-            || message.Contains("could not start QuickBooks", StringComparison.OrdinalIgnoreCase))
-        {
-            return "QuickBooks could not be started. Open QuickBooks and the company file, then try again. "
-                + $"(Original error: {message})";
-        }
-
-        if (message.Contains("0x80040401", StringComparison.OrdinalIgnoreCase))
-        {
-            return "QuickBooks does not have a company file open. Open the company file and try again. "
-                + $"(Original error: {message})";
-        }
-
-        if (message.Contains("0x80040420", StringComparison.OrdinalIgnoreCase))
-        {
-            return "This application has not been authorized to access the company file. In QuickBooks, "
-                + "grant access under Edit > Preferences > Integrated Applications, then try again. "
-                + $"(Original error: {message})";
-        }
-
-        if (message.Contains("0x80040416", StringComparison.OrdinalIgnoreCase))
-        {
-            return "QuickBooks is busy or a modal dialog is open. Close any open dialog in QuickBooks and "
-                + $"try again. (Original error: {message})";
-        }
-
-        return $"The QuickBooks connection failed: {message}";
     }
 
     public void Dispose()

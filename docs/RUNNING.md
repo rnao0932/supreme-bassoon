@@ -149,7 +149,7 @@ QuickBooks identifiers — handle them accordingly.
 
 | Message | What it means |
 | --- | --- |
-| "The QuickBooks Desktop SDK component … is not registered" | SDK not installed, or a bitness mismatch. See the publish step above. |
+| "The QuickBooks Desktop SDK is not available to this application" / `0x80040154` / "Class not registered" | The SDK is not installed — installing QuickBooks alone is not enough, the SDK is a separate download — or the process bitness does not match the registered request processor. Rebuild with the other `-r win-x86` / `-r win-x64`. To work through the application without QuickBooks, use the simulated company instead. |
 | "QuickBooks does not have a company file open" | Open the company file first. |
 | "This application has not been authorized" | Grant access in QuickBooks under Edit → Preferences → Integrated Applications. |
 | "QuickBooks is busy or a modal dialog is open" | Close the dialog in QuickBooks. |
