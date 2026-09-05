@@ -161,10 +161,12 @@ that the code makes safe rather than a fact.
 - **How to settle the first half:** the spike's capability probe now covers `BillModRq` alongside
   checks and the credit-card control. Same read-only method: a modification naming a transaction
   that cannot exist.
-- **What the probe cannot answer:** what happens when the bill has already been **paid**. QuickBooks
-  permits reclassifying an expense line on a settled bill, and it is often exactly the correction
-  wanted, but the effect on the bill payment linkage has not been observed here. The preview marks
-  such rows with a PAID warning; before enabling bill writes against real data, reclassify one paid
-  bill in a disposable company and check the vendor's transaction history and the A/P ageing either
-  side of it.
+- **Observed, 2026-09-05, QuickBooks Desktop Pro Plus 2024:** reclassifying an expense line on a
+  **paid** bill completed and left the bill's paid status intact. This is the first empirical answer
+  to this question; before it, the concern was speculative.
+- **Still to confirm on the same evidence:** the A/P ageing and vendor balance detail either side of
+  the change, and the behaviour of a **partly paid** bill or one settled across several payments.
+  Paid status surviving is necessary but not sufficient - the payment linkage and the ageing buckets
+  are what an audit would look at. The preview continues to mark such rows with a PAID warning, which
+  remains the right treatment: informative, not obstructive.
 - **Bills that are partly paid, or paid across several payments**, are the case most worth watching.

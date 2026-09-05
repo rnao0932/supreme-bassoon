@@ -119,7 +119,7 @@
                     ToolTip="Set this before connecting. Intuit's object matrix says CheckMod does not exist; run the spike with --allow-write to find out whether it does on this QuickBooks." />
           <CheckBox Content="Allow bill writes (unverified)" IsChecked="{Binding EnableBillWrites}"
                     IsEnabled="{Binding CanChangeConnectionOptions}" Margin="0,0,0,4"
-                    ToolTip="Set this before connecting. Intuit's object matrix says CheckMod does not exist; run the spike with --allow-write to find out whether it does on this QuickBooks." />
+                    ToolTip="Set this before connecting. Bills post to Accounts Payable and may already be paid; reclassifying a paid bill changes what a settled payment was for. Such rows carry a PAID warning." />
         </WrapPanel>
 
         <WrapPanel IsEnabled="{Binding IsConnected}">
