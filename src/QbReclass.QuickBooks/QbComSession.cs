@@ -305,39 +305,70 @@ public sealed class QbComSession : IQbSession
     /// </remarks>
     private static void OpenConnection(object processor, QbConnectionOptions options)
     {
-        if (options.ConnectionType == QbConnectionType.LocalAlreadyRunning)
+        var attempts = new List<string>();
+
+        // OpenConnection needs no connection-type constant and is the documented way to attach to
+        // a local QuickBooks, so it is tried first.
+        if (TryOpen(processor, () => Invoke(processor, "OpenConnection", string.Empty, options.ApplicationName),
+                "OpenConnection", attempts))
         {
-            Invoke(processor, "OpenConnection", string.Empty, options.ApplicationName);
             return;
         }
 
-        // localQBDLaunchUI is 2 where the enum starts at 0 and 3 where it starts at 1.
-        Exception? lastFailure = null;
+        // Then OpenConnection2 across the plausible constants. QBXMLRPConnectionType is
+        // inconsistently documented as 0-based or 1-based, so rather than pick one, each candidate
+        // that names a local connection under either numbering is tried in turn. A wrong guess is
+        // refused by QuickBooks; it cannot reach somewhere unintended.
+        var candidates = options.ConnectionType == QbConnectionType.LocalLaunchIfNeeded
+            ? new[] { 2, 3, 0, 1 }   // launch-UI first, then plain local
+            : new[] { 0, 1, 2, 3 };  // plain local first
 
-        foreach (var candidate in new[] { 2, 3 })
+        foreach (var candidate in candidates)
         {
-            try
+            if (TryOpen(
+                    processor,
+                    () => Invoke(processor, "OpenConnection2", string.Empty, options.ApplicationName, candidate),
+                    $"OpenConnection2({candidate})",
+                    attempts))
             {
-                Invoke(processor, "OpenConnection2", string.Empty, options.ApplicationName, candidate);
                 return;
-            }
-            catch (Exception ex)
-            {
-                lastFailure = ex;
             }
         }
 
-        // Every candidate was rejected; fall back to the connection that needs no constant. It
-        // cannot start QuickBooks, so the caller gets a plain "QuickBooks is not running" rather
-        // than a confusing one about connection types.
+        // Everything was refused. The message names what was tried, because "could not connect"
+        // without that is the least useful thing this application can say.
+        throw new QbSessionException(
+            "Could not open a connection to QuickBooks." + Environment.NewLine + Environment.NewLine
+            + "QuickBooks must be running with a company file open before connecting. If it is, "
+            + "check that QuickBooks and this application are running as the same Windows user and "
+            + "at the same elevation - a QuickBooks started as administrator is not visible to an "
+            + "application that was not, and the reverse."
+            + Environment.NewLine + Environment.NewLine
+            + "Attempts made:" + Environment.NewLine
+            + string.Join(Environment.NewLine, attempts));
+    }
+
+    /// <summary>
+    /// Runs one connection attempt, recording what was tried and how it failed.
+    /// </summary>
+    /// <remarks>
+    /// Every failure is kept rather than only the last. When none of the attempts works, the list
+    /// is what distinguishes "QuickBooks is not running" from "this edition numbers the connection
+    /// constants differently", and the two need different fixes.
+    /// </remarks>
+    private static bool TryOpen(object processor, Action attempt, string label, List<string> attempts)
+    {
         try
         {
-            Invoke(processor, "OpenConnection", string.Empty, options.ApplicationName);
+            attempt();
+            attempts.Add($"  {label}: succeeded");
+            return true;
         }
         catch (Exception ex)
         {
-            throw new QbSessionException(
-                QbConnectionDiagnostics.Describe(lastFailure ?? ex, ProgId), ex);
+            var actual = ex is TargetInvocationException { InnerException: { } inner } ? inner : ex;
+            attempts.Add($"  {label}: {actual.Message}");
+            return false;
         }
     }
 
