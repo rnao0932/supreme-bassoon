@@ -312,6 +312,47 @@ public static class QbXmlRequestBuilder
     }
 
     /// <summary>
+    /// A TxnID that is well formed but cannot match any record. QuickBooks assigns identifiers of
+    /// the form "1A2B-1234567890"; a zeroed one is syntactically ordinary and permanently absent.
+    /// </summary>
+    public const string NonexistentTxnId = "0-0";
+
+    /// <summary>
+    /// Builds a modification request that deliberately names a transaction that does not exist, to
+    /// discover whether this QuickBooks recognizes the request type at all.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is a read-only question asked with a write-shaped request. Because the TxnID can never
+    /// match, QuickBooks has nothing to modify and nothing is changed whatever the answer; the
+    /// information is entirely in which rejection comes back.
+    /// </para>
+    /// <para>
+    /// A request type the edition does not implement is refused before the payload is considered,
+    /// with status 500. A request type it does implement gets far enough to look for the record and
+    /// fails to find it, with status 3120. Those two answers are what distinguishes "this operation
+    /// does not exist" from "this operation exists and I did not give it a real record".
+    /// </para>
+    /// </remarks>
+    public static XElement ModCapabilityProbe(string modRequestName, string requestId = "1")
+    {
+        ArgumentException.ThrowIfNullOrEmpty(modRequestName);
+
+        // CheckModRq -> CheckMod
+        var modElement = modRequestName.EndsWith("Rq", StringComparison.Ordinal)
+            ? modRequestName[..^2]
+            : modRequestName;
+
+        return new XElement(
+            modRequestName,
+            new XAttribute("requestID", requestId),
+            new XElement(
+                modElement,
+                new XElement("TxnID", NonexistentTxnId),
+                new XElement("EditSequence", "0")));
+    }
+
+    /// <summary>
     /// Opens the QuickBooks window for a transaction so the user can inspect it by hand
     /// (spec section 8, "future enhancement"). Read-only; QuickBooks must be running with a UI.
     /// </summary>

@@ -53,7 +53,24 @@ that the code makes safe rather than a fact.
 
 ### 5. Can a reconciled check be safely reclassified in place through any supported SDK workflow? If not, should checks be excluded from automated writes?
 
-- **Status:** unanswered. **Currently answered "no" by default.**
+- **Status:** unanswered, but now **testable in one command**.
+- **How to settle it:** run the spike with `--allow-write` and read the "Checks" finding. The probe
+  sends a `CheckModRq` naming a transaction that cannot exist, so nothing is modified either way;
+  the answer is entirely in which rejection comes back. Status 500 means the edition does not
+  implement the request. Status 3120 means it does, and got as far as looking for the record.
+  Credit card charges are probed alongside as a control, so "supported" has a known shape on the
+  same edition to compare against.
+- **Why this matters more than it looks:** the reason checks are excluded is a claim about Intuit's
+  published object matrix, taken from the specification and never verified against an installation.
+  If that claim does not hold on the target edition, the scope of version 1 is materially larger
+  than currently assumed - and if the client's population is mostly checks, it is the difference
+  between a working tool and a preview.
+- **What is still required even if `CheckModRq` exists:** a `CheckAdapter` with its own
+  line-preservation handling, its own regression tests mirroring `ReclassificationTests`, and a
+  reconciled multi-line check proven end to end with a Previous Reconciliation report compared
+  before and after. The probe establishes that the door is unlocked, not that it is safe to walk
+  through.
+- **Currently answered "no" by default.**
 - **Current assumption:** `CheckAdapter.TypeSupport` is `NotSupported`, on the strength of Intuit's
   published object matrix. Checks appear in the preview with an explanation and cannot be selected.
 - **If a supported path exists:** see the check procedure in

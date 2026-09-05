@@ -66,6 +66,16 @@ public sealed class SimulatedCompany
     /// <summary>Records returned per iterator page.</summary>
     public int PageSizeCap { get; set; } = 100;
 
+    /// <summary>
+    /// Whether this simulated QuickBooks implements <c>CheckModRq</c>.
+    /// </summary>
+    /// <remarks>
+    /// False by default, matching the assumption the product ships with. Set true to rehearse the
+    /// other answer: an edition that does implement it, which is what the capability probe exists
+    /// to discover and which would widen the scope of version 1.
+    /// </remarks>
+    public bool SupportsCheckMod { get; set; }
+
     internal string NextEditSequence() =>
         (++_editCounter).ToString(CultureInfo.InvariantCulture);
 

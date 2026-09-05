@@ -92,12 +92,7 @@ public sealed class SimulatedQbSession : IQbSession
             "CreditCardChargeQueryRq" => HandleTransactionQuery(request, requestId, TransactionType.CreditCardCharge),
             "CheckQueryRq" => HandleTransactionQuery(request, requestId, TransactionType.Check),
             "CreditCardChargeModRq" => HandleCreditCardChargeMod(request, requestId),
-            "CheckModRq" => Error(
-                "CheckModRs",
-                requestId,
-                500,
-                "The request has not been processed because this QuickBooks version does not support "
-                + "modifying a check through the SDK."),
+            "CheckModRq" => HandleCheckMod(request, requestId),
             "TxnDisplayAddRq" => Respond("TxnDisplayAddRs", requestId),
             _ => Error(
                 request.Name.LocalName.Replace("Rq", "Rs", StringComparison.Ordinal),
@@ -105,6 +100,46 @@ public sealed class SimulatedQbSession : IQbSession
                 500,
                 $"The request '{request.Name.LocalName}' is not supported."),
         };
+    }
+
+    /// <summary>
+    /// Answers a check modification the way an edition that does, or does not, implement it would.
+    /// </summary>
+    /// <remarks>
+    /// The distinction the capability probe relies on: an unimplemented request type is refused
+    /// outright with 500, while an implemented one gets as far as looking for the record and
+    /// reports 3120 when it is not there.
+    /// </remarks>
+    private string HandleCheckMod(XElement request, string requestId)
+    {
+        const string ResponseName = "CheckModRs";
+
+        if (!_company.SupportsCheckMod)
+        {
+            return Error(
+                ResponseName,
+                requestId,
+                500,
+                "The request has not been processed because this QuickBooks version does not support "
+                + "modifying a check through the SDK.");
+        }
+
+        var txnId = request.Element("CheckMod")?.Element("TxnID")?.Value ?? string.Empty;
+        var existing = _company.Find(txnId);
+
+        if (existing is null || existing.TxnType != TransactionType.Check)
+        {
+            return Error(ResponseName, requestId, 3120, $"The transaction {txnId} could not be found.");
+        }
+
+        // Beyond existence this simulator does not model check modification. Saying so plainly is
+        // better than pretending to apply a change whose real semantics have never been observed.
+        return Error(
+            ResponseName,
+            requestId,
+            3180,
+            "This simulator does not model applying a check modification. Prove the real semantics "
+            + "against QuickBooks before enabling checks.");
     }
 
     private XElement HostRet()

@@ -159,6 +159,7 @@ public sealed class FeasibilityProbe
             ProbeType(adapter, options, findings, typeResults);
         }
 
+        ProbeModCapabilities(findings);
         ProbeWritePath(options, findings);
 
         return new ProbeReport
@@ -299,6 +300,102 @@ public sealed class FeasibilityProbe
                 + "resubmitted verbatim to retain them; confirm this against a test record before "
                 + "trusting the write path (spec section 22, question 6)."));
         }
+    }
+
+    /// <summary>
+    /// Asks QuickBooks, without changing anything, which modification requests it implements.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This exists because the project's stated reason for treating checks as unwritable is a claim
+    /// about Intuit's object matrix, not an observation of this installation. A claim of that kind
+    /// is exactly what section 4 of the specification says to prove rather than assume, and it
+    /// decides how much of the job the utility can actually do.
+    /// </para>
+    /// <para>
+    /// Each type is probed with a modification request naming a transaction that cannot exist, so
+    /// nothing is modified whichever way the answer goes. Credit card charges are probed too, as a
+    /// control: that type is believed writable, so its reply establishes what "supported" looks like
+    /// on this edition. If checks reply the same way, the matrix claim does not hold here.
+    /// </para>
+    /// </remarks>
+    private void ProbeModCapabilities(List<ProbeFinding> findings)
+    {
+        if (_session.Info.IsReadOnly)
+        {
+            // The probe cannot modify anything - its TxnID matches no record - but it is still a
+            // modification request, and a read-only session refuses those without exception. An
+            // exception here would be a hole in the guarantee that read-only means read-only, so
+            // the probe is skipped instead and the report says how to run it.
+            findings.Add(new ProbeFinding(
+                "Mod capability",
+                ProbeSeverity.Info,
+                "Skipped: this session is read-only. Re-run with --allow-write to discover which "
+                + "modification requests this QuickBooks implements. The probe names a transaction "
+                + "that cannot exist, so it changes nothing either way."));
+            return;
+        }
+
+        var observed = new Dictionary<string, QbStatus>(StringComparer.Ordinal);
+
+        foreach (var (label, requestName) in new[]
+                 {
+                     ("Credit Card Charge (control)", "CreditCardChargeModRq"),
+                     ("Check", "CheckModRq"),
+                 })
+        {
+            try
+            {
+                var response = _query.Send(QbXmlRequestBuilder.ModCapabilityProbe(requestName));
+                observed[requestName] = response.Status;
+
+                findings.Add(new ProbeFinding(
+                    $"Mod capability: {label}",
+                    response.Status.Category == QbStatusCategory.Unsupported
+                        ? ProbeSeverity.Info
+                        : ProbeSeverity.Info,
+                    $"{requestName} against a nonexistent transaction returned "
+                    + $"{response.Status.Code} ({response.Status.Severity}): {response.Status.Message}"));
+            }
+            catch (Exception ex) when (ex is QbQueryException or QbXmlFormatException)
+            {
+                findings.Add(new ProbeFinding(
+                    $"Mod capability: {label}", ProbeSeverity.Warning, $"{requestName} probe failed: {ex.Message}"));
+            }
+        }
+
+        if (!observed.TryGetValue("CheckModRq", out var check))
+        {
+            return;
+        }
+
+        observed.TryGetValue("CreditCardChargeModRq", out var control);
+
+        if (check.Category == QbStatusCategory.Unsupported)
+        {
+            findings.Add(new ProbeFinding(
+                "Checks",
+                ProbeSeverity.Info,
+                "This QuickBooks does not implement CheckModRq, which confirms the assumption this "
+                + "build ships with. Checks stay preview-only and the utility will not delete and "
+                + "recreate one to work around it."));
+            return;
+        }
+
+        var sameAsControl = control is not null && control.Code == check.Code;
+
+        findings.Add(new ProbeFinding(
+            "Checks",
+            ProbeSeverity.Warning,
+            "This QuickBooks appears to IMPLEMENT CheckModRq: it rejected the probe with "
+            + $"{check.Code} ({check.Message}) rather than refusing the request type"
+            + (sameAsControl
+                ? ", the same status the known-writable credit card charge returned. "
+                : ". ")
+            + "The assumption that checks cannot be modified in place does not hold here, and the "
+            + "scope of version 1 should be revisited. Enabling it still needs a CheckAdapter with "
+            + "its own line-preservation handling and its own regression tests, plus a reconciled "
+            + "multi-line check proven end to end - see docs/PHASE0-SPIKE.md."));
     }
 
     /// <summary>
