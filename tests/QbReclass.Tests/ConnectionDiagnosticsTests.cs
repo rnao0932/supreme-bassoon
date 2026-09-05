@@ -43,7 +43,7 @@ public sealed class ConnectionDiagnosticsTests
     [InlineData(QbConnectionDiagnostics.NotAuthorized, "Integrated Applications")]
     [InlineData(QbConnectionDiagnostics.QuickBooksBusy, "dialog")]
     [InlineData(QbConnectionDiagnostics.CouldNotStartQuickBooks, "Open QuickBooks")]
-    [InlineData(QbConnectionDiagnostics.WrongFileMode, "single-user")]
+    [InlineData(QbConnectionDiagnostics.WrongFileMode, "no company file is open")]
     public void EachKnownFailureNamesItsRemedy(int hresult, string expected)
     {
         var message = QbConnectionDiagnostics.Describe(new COMException("com failure", hresult));

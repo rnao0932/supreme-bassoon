@@ -60,6 +60,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private int _batchSize = 25;
     private bool _continueOnIsolatedFailure;
     private bool _enableCheckWrites;
+    private string _companyFilePath = string.Empty;
     private CandidateRow? _selectedRow;
 
     public MainViewModel()
@@ -77,6 +78,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         StopCommand = new RelayCommand(() => _stop?.Cancel(), () => IsBusy && _stop is not null);
         ExportCommand = new RelayCommand(Export, () => !IsBusy && _job is not null);
         OpenInQuickBooksCommand = new RelayCommand(() => _ = OpenInQuickBooksAsync(), () => !IsBusy && SelectedRow is not null);
+        BrowseCompanyFileCommand = new RelayCommand(BrowseCompanyFile, () => !IsBusy && !IsConnected);
     }
 
     // ---------------------------------------------------------------- bindings
@@ -102,6 +104,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public RelayCommand StopCommand { get; }
     public RelayCommand ExportCommand { get; }
     public RelayCommand OpenInQuickBooksCommand { get; }
+    public RelayCommand BrowseCompanyFileCommand { get; }
 
     public string CompanyDisplay
     {
@@ -135,6 +138,22 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     }
 
     public bool IsIdle => !IsBusy;
+
+    /// <summary>
+    /// Optional path to a .QBW file.
+    /// </summary>
+    /// <remarks>
+    /// Empty means "whatever QuickBooks currently has open", which is the safer default because it
+    /// cannot open a file the operator did not intend. Naming a file is for the case QuickBooks
+    /// reports when nothing is loaded - it will open the named file itself - and for pointing
+    /// deliberately at a restored copy rather than the live company.
+    /// </remarks>
+    public string CompanyFilePath
+    {
+        get => _companyFilePath;
+        set => Set(ref _companyFilePath, value);
+    }
+
 
     public bool IsConnected
     {
@@ -344,11 +363,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         try
         {
             var wantsWrite = WriteModeEnabled;
+            var companyFile = CompanyFilePath.Trim();
             _registry = AdapterRegistry.Create(EnableCheckWrites);
 
             var session = await _worker.RunAsync<IQbSession>(() => simulate
                 ? new SimulatedQbSession(DemoCompany.Build(), readOnly: !wantsWrite)
-                : QbComSession.Connect(new QbConnectionOptions { ReadOnly = !wantsWrite }));
+                : QbComSession.Connect(new QbConnectionOptions
+                {
+                    ReadOnly = !wantsWrite,
+                    CompanyFilePath = companyFile,
+                }));
 
             _session = session;
             _store = SqliteAuditStore.OpenDefault();
@@ -758,6 +782,22 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         };
     }
 
+    /// <summary>Picks a .QBW file to connect against.</summary>
+    private void BrowseCompanyFile()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Select a QuickBooks company file",
+            Filter = "QuickBooks company files (*.QBW)|*.QBW|All files (*.*)|*.*",
+            CheckFileExists = true,
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            CompanyFilePath = dialog.FileName;
+        }
+    }
+
     private static string? Nullify(string value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private void RaiseTotals()
@@ -783,6 +823,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         StopCommand.RaiseCanExecuteChanged();
         ExportCommand.RaiseCanExecuteChanged();
         OpenInQuickBooksCommand.RaiseCanExecuteChanged();
+        BrowseCompanyFileCommand.RaiseCanExecuteChanged();
     }
 
     private void ShowError(string title, Exception ex)

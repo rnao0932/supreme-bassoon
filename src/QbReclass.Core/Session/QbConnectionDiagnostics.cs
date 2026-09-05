@@ -97,9 +97,18 @@ public static class QbConnectionDiagnostics
             + "front, close whatever is open, then try again.",
 
         WrongFileMode =>
-            "The company file is not open in a mode that permits this connection. Confirm whether "
-            + "QuickBooks is in single-user or multi-user mode and what the integrated application is "
-            + "permitted to do.",
+            "QuickBooks does not currently have a company file open, or has it open in a mode this "
+            + "connection cannot use."
+            + Environment.NewLine + Environment.NewLine
+            + "Most often this simply means no company file is open. QuickBooks itself can be "
+            + "running with no file loaded, which looks identical from outside."
+            + Environment.NewLine
+            + "1. Open the company file in QuickBooks and leave it open, then connect again; or"
+            + Environment.NewLine
+            + "2. Name the .QBW file when connecting, which lets QuickBooks open it for you."
+            + Environment.NewLine + Environment.NewLine
+            + "If a file is open, check whether QuickBooks is in single-user or multi-user mode and "
+            + "what this integrated application is permitted to do in that mode.",
 
         _ => null,
     };

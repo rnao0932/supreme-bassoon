@@ -100,6 +100,14 @@
                   ToolTip="Explore the application against a small fake company. QuickBooks is not contacted." />
           <Button Content="Disconnect" Command="{Binding DisconnectCommand}" Margin="0,0,16,4" />
 
+          <StackPanel Style="{StaticResource Field}">
+            <TextBlock Text="Company file" Style="{StaticResource FieldLabel}" />
+            <TextBox Text="{Binding CompanyFilePath, UpdateSourceTrigger=PropertyChanged}" Width="240"
+                     IsEnabled="{Binding IsIdle}"
+                     ToolTip="Leave blank to use whatever QuickBooks currently has open. Name a .QBW file only when QuickBooks has no file open, or to point deliberately at a restored copy." />
+            <Button Content="Browse..." Command="{Binding BrowseCompanyFileCommand}" MinWidth="80" Margin="6,0,0,0" />
+          </StackPanel>
+
           <CheckBox Content="A current QuickBooks backup exists" IsChecked="{Binding BackupConfirmed}" Margin="0,0,10,4" />
           <TextBlock Text="{Binding BackupConfirmedText}" Foreground="#666666" VerticalAlignment="Center"
                      Margin="0,0,16,4" />
