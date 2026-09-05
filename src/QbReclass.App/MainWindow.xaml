@@ -112,10 +112,11 @@
           <TextBlock Text="{Binding BackupConfirmedText}" Foreground="#666666" VerticalAlignment="Center"
                      Margin="0,0,16,4" />
           <CheckBox Content="Enable write mode" IsChecked="{Binding WriteModeEnabled}" FontWeight="SemiBold"
-                    Margin="0,0,16,4" />
+                    IsEnabled="{Binding CanChangeConnectionOptions}" Margin="0,0,16,4"
+                    ToolTip="Set this before connecting. The session is opened read-only or writable, and that cannot change once it is open — disconnect to change it." />
           <CheckBox Content="Allow check writes (unverified)" IsChecked="{Binding EnableCheckWrites}"
-                    IsEnabled="{Binding IsIdle}" Margin="0,0,0,4"
-                    ToolTip="Intuit's object matrix says CheckMod does not exist. Run the spike with --allow-write to find out whether it does on this QuickBooks. Takes effect on the next connection." />
+                    IsEnabled="{Binding CanChangeConnectionOptions}" Margin="0,0,0,4"
+                    ToolTip="Set this before connecting. Intuit's object matrix says CheckMod does not exist; run the spike with --allow-write to find out whether it does on this QuickBooks." />
         </WrapPanel>
 
         <WrapPanel IsEnabled="{Binding IsConnected}">

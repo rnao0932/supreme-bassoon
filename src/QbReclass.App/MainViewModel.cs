@@ -132,12 +132,24 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (Set(ref _isBusy, value))
             {
                 Raise(nameof(IsIdle));
+                Raise(nameof(CanChangeConnectionOptions));
                 RefreshCommands();
             }
         }
     }
 
     public bool IsIdle => !IsBusy;
+
+    /// <summary>
+    /// Whether the connection-time options can still be changed.
+    /// </summary>
+    /// <remarks>
+    /// Write mode and check-write support are fixed when the session opens: the session is opened
+    /// read-only or not, and the adapters that decide which rows are writable are built at the same
+    /// moment. Toggling either afterwards cannot take effect, so the controls are disabled rather
+    /// than left clickable and then answered with a dialog explaining that nothing happened.
+    /// </remarks>
+    public bool CanChangeConnectionOptions => !IsBusy && !IsConnected;
 
     /// <summary>
     /// Optional path to a .QBW file.
@@ -162,6 +174,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (Set(ref _isConnected, value))
             {
+                Raise(nameof(CanChangeConnectionOptions));
                 RefreshCommands();
             }
         }
