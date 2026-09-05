@@ -114,6 +114,10 @@ public static class Program
               --backup-confirmed    Assert that a current QuickBooks backup exists. Required to write.
               --yes                 Approve every batch without prompting. Use only in a test company.
               --continue-on-error   Continue past isolated failures. A verification mismatch still stops.
+              --enable-check-writes Allow checks to be modified through CheckModRq. Off by default
+                                    because Intuit's object matrix says the operation does not
+                                    exist; run 'spike --allow-write' to find out whether it does on
+                                    your QuickBooks before turning this on.
 
             SPIKE
               --write-txn <TxnID>   Credit card charge to exercise the write path against.
@@ -595,11 +599,11 @@ public static class Program
     /// <summary>Session, store and services for one command.</summary>
     private sealed class Context : IDisposable
     {
-        private Context(IQbSession session, SqliteAuditStore store)
+        private Context(IQbSession session, SqliteAuditStore store, bool enableCheckWrites)
         {
             Session = session;
             Store = store;
-            Registry = AdapterRegistry.Default;
+            Registry = AdapterRegistry.Create(enableCheckWrites);
             Query = new QueryService(session, Registry);
             Planner = new ReclassificationPlanner(Registry);
             Preflight = new PreflightService(Query, Registry);
@@ -629,7 +633,8 @@ public static class Program
 
             try
             {
-                return new Context(OpenSession(cli, writable), store);
+                return new Context(
+                    OpenSession(cli, writable), store, cli.Has("enable-check-writes"));
             }
             catch
             {

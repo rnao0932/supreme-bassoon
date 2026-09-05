@@ -70,9 +70,15 @@ that the code makes safe rather than a fact.
   reconciled multi-line check proven end to end with a Previous Reconciliation report compared
   before and after. The probe establishes that the door is unlocked, not that it is safe to walk
   through.
-- **Currently answered "no" by default.**
-- **Current assumption:** `CheckAdapter.TypeSupport` is `NotSupported`, on the strength of Intuit's
-  published object matrix. Checks appear in the preview with an explanation and cannot be selected.
+- **Implementation status:** the write path now exists and is off by default. `CheckAdapter` takes
+  an `enableModification` flag, wired to `--enable-check-writes` on the command line and an "Allow
+  check writes" checkbox in the application. Enabled, checks travel exactly the same path as credit
+  card charges: same preflight, same all-lines-resubmitted request, same read-back verification
+  against the same protected fields, same audit record. A check's `RefNumber` is its check number
+  and its `AccountRef` is the bank account it draws on; both are header fields and neither is sent,
+  so a reclassification cannot renumber a check or move it between bank accounts.
+- **Why it stays off by default:** the operation is unverified, not thought to be wrong. Shipping it
+  on would replace one unexamined assumption with another.
 - **If a supported path exists:** see the check procedure in
   [PHASE0-SPIKE.md](PHASE0-SPIKE.md). It belongs inside `CheckAdapter`, behind its own tests.
 - **What is explicitly not on the table:** delete-and-recreate. Specification sections 4, 5, 10 and

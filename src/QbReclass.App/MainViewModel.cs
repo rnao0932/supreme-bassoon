@@ -23,7 +23,7 @@ namespace QbReclass.App;
 public sealed class MainViewModel : ObservableObject, IDisposable
 {
     private readonly StaWorker _worker = new();
-    private readonly AdapterRegistry _registry = AdapterRegistry.Default;
+    private AdapterRegistry _registry = AdapterRegistry.Default;
 
     private IQbSession? _session;
     private SqliteAuditStore? _store;
@@ -59,6 +59,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _maxAmount = string.Empty;
     private int _batchSize = 25;
     private bool _continueOnIsolatedFailure;
+    private bool _enableCheckWrites;
     private CandidateRow? _selectedRow;
 
     public MainViewModel()
@@ -269,6 +270,25 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         set => Set(ref _batchSize, Math.Clamp(value, 1, 500));
     }
 
+    /// <summary>
+    /// Whether checks may be modified. Fixed for the life of a connection, because the adapters are
+    /// built when the session opens and the preview's supported/unsupported markings come from them;
+    /// letting it change underneath a preview would leave rows labelled by a rule no longer in force.
+    /// </summary>
+    public bool EnableCheckWrites
+    {
+        get => _enableCheckWrites;
+        set
+        {
+            if (Set(ref _enableCheckWrites, value) && IsConnected)
+            {
+                StatusText = "Check writes "
+                    + (value ? "enabled" : "disabled")
+                    + " takes effect on the next connection. Disconnect and reconnect to apply it.";
+            }
+        }
+    }
+
     public bool ContinueOnIsolatedFailure
     {
         get => _continueOnIsolatedFailure;
@@ -324,6 +344,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         try
         {
             var wantsWrite = WriteModeEnabled;
+            _registry = AdapterRegistry.Create(EnableCheckWrites);
 
             var session = await _worker.RunAsync<IQbSession>(() => simulate
                 ? new SimulatedQbSession(DemoCompany.Build(), readOnly: !wantsWrite)

@@ -20,10 +20,22 @@ public sealed class AdapterRegistry
     /// <summary>
     /// The shipping configuration: credit card charges are writable, checks are preview-only.
     /// </summary>
-    public static AdapterRegistry Default { get; } = new(
+    public static AdapterRegistry Default { get; } = Create(enableCheckWrites: false);
+
+    /// <summary>
+    /// Builds a registry, optionally with the check write path enabled.
+    /// </summary>
+    /// <param name="enableCheckWrites">
+    /// Turns on <c>CheckModRq</c>. Checks then travel the same preflight, line-preservation,
+    /// verification and audit path as credit card charges - the guarantees are identical, and the
+    /// only thing this changes is whether the operation is attempted at all. Enable it on evidence:
+    /// the capability probe in <c>qbreclass spike --allow-write</c>, followed by a reconciled
+    /// multi-line check proven end to end in a disposable company.
+    /// </param>
+    public static AdapterRegistry Create(bool enableCheckWrites) => new(
     [
         new CreditCardChargeAdapter(),
-        new CheckAdapter(),
+        new CheckAdapter(enableCheckWrites),
     ]);
 
     public IReadOnlyCollection<ITransactionAdapter> All => _adapters.Values;

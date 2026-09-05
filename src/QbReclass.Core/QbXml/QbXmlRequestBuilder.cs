@@ -211,20 +211,50 @@ public static class QbXmlRequestBuilder
     /// Builds a <c>CreditCardChargeModRq</c> that changes the account on the target lines and
     /// resubmits every other line unchanged so QuickBooks retains them.
     /// </summary>
-    /// <param name="snapshot">Transaction exactly as read during preflight.</param>
-    /// <param name="targetLineIds">TxnLineIDs whose account should change.</param>
-    /// <param name="destination">Account the target lines should point at.</param>
     public static XElement CreditCardChargeMod(
         TransactionSnapshot snapshot,
         IReadOnlyCollection<string> targetLineIds,
         QbRef destination,
-        string requestId = "1")
+        string requestId = "1") =>
+        TransactionMod("CreditCardChargeMod", snapshot, targetLineIds, destination, requestId);
+
+    /// <summary>
+    /// Builds a <c>CheckModRq</c> with the same guarantees as the credit-card equivalent.
+    /// </summary>
+    /// <remarks>
+    /// A check's reference number is its check number and its posting account is the bank account;
+    /// both are header fields, and both are left out of the request entirely, so a reclassification
+    /// cannot renumber a check or move it between bank accounts. That is the same minimal-mutation
+    /// rule the credit-card path uses, and it matters more here.
+    /// </remarks>
+    public static XElement CheckMod(
+        TransactionSnapshot snapshot,
+        IReadOnlyCollection<string> targetLineIds,
+        QbRef destination,
+        string requestId = "1") =>
+        TransactionMod("CheckMod", snapshot, targetLineIds, destination, requestId);
+
+    /// <summary>
+    /// Builds a modification request for any transaction type whose Mod element carries an expense
+    /// table: TxnID, EditSequence, then every line resubmitted with the target lines redirected.
+    /// </summary>
+    /// <remarks>
+    /// Shared deliberately. The dangerous part of this request is the same whatever the transaction
+    /// type - omitting an existing line deletes it - so the code that gets it right is written once
+    /// and every adapter inherits the same behaviour rather than reimplementing it.
+    /// </remarks>
+    private static XElement TransactionMod(
+        string modElementName,
+        TransactionSnapshot snapshot,
+        IReadOnlyCollection<string> targetLineIds,
+        QbRef destination,
+        string requestId)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(targetLineIds);
         ArgumentNullException.ThrowIfNull(destination);
 
-        var mod = new XElement("CreditCardChargeMod");
+        var mod = new XElement(modElementName);
 
         // Required, in this order, before any other child.
         mod.Add(new XElement("TxnID", snapshot.TxnId));
@@ -246,7 +276,7 @@ public static class QbXmlRequestBuilder
             mod.Add(ItemLineMod(line));
         }
 
-        return new XElement("CreditCardChargeModRq", new XAttribute("requestID", requestId), mod);
+        return new XElement(modElementName + "Rq", new XAttribute("requestID", requestId), mod);
     }
 
     /// <summary>

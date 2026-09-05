@@ -14,11 +14,11 @@ public sealed class Harness : IDisposable
 {
     private readonly string _dbPath;
 
-    public Harness(SimulatedCompany company, bool readOnly = false)
+    public Harness(SimulatedCompany company, bool readOnly = false, AdapterRegistry? registry = null)
     {
         Company = company;
         Session = new SimulatedQbSession(company, readOnly);
-        Registry = AdapterRegistry.Default;
+        Registry = registry ?? AdapterRegistry.Default;
 
         _dbPath = Path.Combine(Path.GetTempPath(), $"qbreclass-test-{Guid.NewGuid():N}.db");
         Store = new SqliteAuditStore(_dbPath);

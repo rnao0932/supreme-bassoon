@@ -108,38 +108,24 @@ public sealed class SimulatedQbSession : IQbSession
     /// <remarks>
     /// The distinction the capability probe relies on: an unimplemented request type is refused
     /// outright with 500, while an implemented one gets as far as looking for the record and
-    /// reports 3120 when it is not there.
+    /// reports 3120 when it is not there. When it is there, the change is applied under exactly the
+    /// same rules as a credit card charge - including deleting any line the request fails to
+    /// mention - so a test proving line preservation for checks is proving something real.
     /// </remarks>
     private string HandleCheckMod(XElement request, string requestId)
     {
-        const string ResponseName = "CheckModRs";
-
         if (!_company.SupportsCheckMod)
         {
             return Error(
-                ResponseName,
+                "CheckModRs",
                 requestId,
                 500,
                 "The request has not been processed because this QuickBooks version does not support "
                 + "modifying a check through the SDK.");
         }
 
-        var txnId = request.Element("CheckMod")?.Element("TxnID")?.Value ?? string.Empty;
-        var existing = _company.Find(txnId);
-
-        if (existing is null || existing.TxnType != TransactionType.Check)
-        {
-            return Error(ResponseName, requestId, 3120, $"The transaction {txnId} could not be found.");
-        }
-
-        // Beyond existence this simulator does not model check modification. Saying so plainly is
-        // better than pretending to apply a change whose real semantics have never been observed.
-        return Error(
-            ResponseName,
-            requestId,
-            3180,
-            "This simulator does not model applying a check modification. Prove the real semantics "
-            + "against QuickBooks before enabling checks.");
+        return HandleTransactionMod(
+            request, requestId, "CheckModRs", "CheckMod", TransactionType.Check);
     }
 
     private XElement HostRet()
@@ -319,37 +305,53 @@ public sealed class SimulatedQbSession : IQbSession
         return query.OrderBy(t => t.TxnDate).ThenBy(t => t.TxnId, StringComparer.Ordinal).ToList();
     }
 
-    private string HandleCreditCardChargeMod(XElement request, string requestId)
-    {
-        const string ResponseName = "CreditCardChargeModRs";
+    private string HandleCreditCardChargeMod(XElement request, string requestId) =>
+        HandleTransactionMod(
+            request,
+            requestId,
+            "CreditCardChargeModRs",
+            "CreditCardChargeMod",
+            TransactionType.CreditCardCharge);
 
+    /// <summary>
+    /// Applies a modification for any transaction type with an expense table, reproducing the
+    /// semantics that make this dangerous: an omitted existing line is deleted, a stale
+    /// EditSequence is rejected, and an inactive account reference is refused.
+    /// </summary>
+    private string HandleTransactionMod(
+        XElement request,
+        string requestId,
+        string responseName,
+        string modElementName,
+        TransactionType txnType)
+    {
         if (Info.IsReadOnly)
         {
-            return Error(ResponseName, requestId, 3260, "Insufficient permission: the session is read-only.");
+            return Error(responseName, requestId, 3260, "Insufficient permission: the session is read-only.");
         }
 
         if (NextModStatusOverride is { } forced)
         {
             NextModStatusOverride = null;
-            return Error(ResponseName, requestId, forced.Code, forced.Message);
+            return Error(responseName, requestId, forced.Code, forced.Message);
         }
 
-        var mod = request.Element("CreditCardChargeMod")
-            ?? throw new QbSessionException("CreditCardChargeModRq contained no CreditCardChargeMod element.");
+        var mod = request.Element(modElementName)
+            ?? throw new QbSessionException($"{modElementName}Rq contained no {modElementName} element.");
 
         var txnId = mod.Element("TxnID")?.Value ?? string.Empty;
         var editSequence = mod.Element("EditSequence")?.Value ?? string.Empty;
 
         var existing = _company.Find(txnId);
-        if (existing is null || existing.TxnType != TransactionType.CreditCardCharge)
+        if (existing is null || existing.TxnType != txnType)
         {
-            return Error(ResponseName, requestId, 3120, $"The transaction {txnId} could not be found.");
+            return Error(responseName, requestId, 3120, $"The transaction {txnId} could not be found.");
         }
 
         if (!string.Equals(existing.EditSequence, editSequence, StringComparison.Ordinal))
         {
             return Error(
-                ResponseName,
+                responseName,
                 requestId,
                 QbStatus.EditSequenceOutOfDate,
                 "The provided edit sequence is out of date. The object was modified after it was read.");
@@ -373,7 +375,7 @@ public sealed class SimulatedQbSession : IQbSession
 
             if (lineError is not null)
             {
-                return Error(ResponseName, requestId, lineError.Value.Code, lineError.Value.Message);
+                return Error(responseName, requestId, lineError.Value.Code, lineError.Value.Message);
             }
         }
 
@@ -387,7 +389,7 @@ public sealed class SimulatedQbSession : IQbSession
 
         _company.Replace(updated);
 
-        return Respond(ResponseName, requestId, TransactionRet(updated, TransactionType.CreditCardCharge));
+        return Respond(responseName, requestId, TransactionRet(updated, txnType));
     }
 
     private List<TransactionLineSnapshot> BuildLinesFromMods(

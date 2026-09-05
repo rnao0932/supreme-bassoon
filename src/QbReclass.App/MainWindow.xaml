@@ -104,7 +104,10 @@
           <TextBlock Text="{Binding BackupConfirmedText}" Foreground="#666666" VerticalAlignment="Center"
                      Margin="0,0,16,4" />
           <CheckBox Content="Enable write mode" IsChecked="{Binding WriteModeEnabled}" FontWeight="SemiBold"
-                    Margin="0,0,0,4" />
+                    Margin="0,0,16,4" />
+          <CheckBox Content="Allow check writes (unverified)" IsChecked="{Binding EnableCheckWrites}"
+                    IsEnabled="{Binding IsIdle}" Margin="0,0,0,4"
+                    ToolTip="Intuit's object matrix says CheckMod does not exist. Run the spike with --allow-write to find out whether it does on this QuickBooks. Takes effect on the next connection." />
         </WrapPanel>
 
         <WrapPanel IsEnabled="{Binding IsConnected}">
