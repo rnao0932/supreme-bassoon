@@ -235,6 +235,21 @@ public static class QbXmlRequestBuilder
         TransactionMod("CheckMod", snapshot, targetLineIds, destination, requestId);
 
     /// <summary>
+    /// Builds a <c>BillModRq</c> with the same guarantees as the other types.
+    /// </summary>
+    /// <remarks>
+    /// A bill posts to Accounts Payable through <c>APAccountRef</c>, and its vendor, date, due date
+    /// and reference number are all header fields. None are sent, so a reclassification cannot move
+    /// a bill between AP accounts, re-date it, or change what it is owed against.
+    /// </remarks>
+    public static XElement BillMod(
+        TransactionSnapshot snapshot,
+        IReadOnlyCollection<string> targetLineIds,
+        QbRef destination,
+        string requestId = "1") =>
+        TransactionMod("BillMod", snapshot, targetLineIds, destination, requestId);
+
+    /// <summary>
     /// Builds a modification request for any transaction type whose Mod element carries an expense
     /// table: TxnID, EditSequence, then every line resubmitted with the target lines redirected.
     /// </summary>

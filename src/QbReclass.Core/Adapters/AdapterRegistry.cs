@@ -20,7 +20,7 @@ public sealed class AdapterRegistry
     /// <summary>
     /// The shipping configuration: credit card charges are writable, checks are preview-only.
     /// </summary>
-    public static AdapterRegistry Default { get; } = Create(enableCheckWrites: false);
+    public static AdapterRegistry Default { get; } = Create(enableCheckWrites: false, enableBillWrites: false);
 
     /// <summary>
     /// Builds a registry, optionally with the check write path enabled.
@@ -32,10 +32,14 @@ public sealed class AdapterRegistry
     /// the capability probe in <c>qbreclass spike --allow-write</c>, followed by a reconciled
     /// multi-line check proven end to end in a disposable company.
     /// </param>
-    public static AdapterRegistry Create(bool enableCheckWrites) => new(
+    /// <param name="enableBillWrites">
+    /// Turns on <c>BillModRq</c>, on the same terms and for the same reasons.
+    /// </param>
+    public static AdapterRegistry Create(bool enableCheckWrites, bool enableBillWrites = false) => new(
     [
         new CreditCardChargeAdapter(),
         new CheckAdapter(enableCheckWrites),
+        new BillAdapter(enableBillWrites),
     ]);
 
     public IReadOnlyCollection<ITransactionAdapter> All => _adapters.Values;

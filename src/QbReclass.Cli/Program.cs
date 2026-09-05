@@ -118,6 +118,8 @@ public static class Program
                                     because Intuit's object matrix says the operation does not
                                     exist; run 'spike --allow-write' to find out whether it does on
                                     your QuickBooks before turning this on.
+              --enable-bill-writes  Allow bills to be modified through BillModRq. Off by default on
+                                    the same terms: unproven against a real company file.
 
             SPIKE
               --write-txn <TxnID>   Credit card charge to exercise the write path against.
@@ -599,11 +601,11 @@ public static class Program
     /// <summary>Session, store and services for one command.</summary>
     private sealed class Context : IDisposable
     {
-        private Context(IQbSession session, SqliteAuditStore store, bool enableCheckWrites)
+        private Context(IQbSession session, SqliteAuditStore store, bool enableCheckWrites, bool enableBillWrites)
         {
             Session = session;
             Store = store;
-            Registry = AdapterRegistry.Create(enableCheckWrites);
+            Registry = AdapterRegistry.Create(enableCheckWrites, enableBillWrites);
             Query = new QueryService(session, Registry);
             Planner = new ReclassificationPlanner(Registry);
             Preflight = new PreflightService(Query, Registry);
@@ -634,7 +636,10 @@ public static class Program
             try
             {
                 return new Context(
-                    OpenSession(cli, writable), store, cli.Has("enable-check-writes"));
+                    OpenSession(cli, writable),
+                    store,
+                    cli.Has("enable-check-writes"),
+                    cli.Has("enable-bill-writes"));
             }
             catch
             {

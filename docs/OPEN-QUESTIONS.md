@@ -154,3 +154,17 @@ that the code makes safe rather than a fact.
   The spike reports it once that path is exercised.
 - **Lesson worth keeping:** this is exactly the class of assumption section 4 warns about. It cost
   one round trip against real QuickBooks and would have cost nothing to discover in Phase 0.
+
+### 12. Does this QuickBooks implement BillModRq, and how does modifying a paid bill behave?
+
+- **Status:** unanswered; the write path exists and is off by default.
+- **How to settle the first half:** the spike's capability probe now covers `BillModRq` alongside
+  checks and the credit-card control. Same read-only method: a modification naming a transaction
+  that cannot exist.
+- **What the probe cannot answer:** what happens when the bill has already been **paid**. QuickBooks
+  permits reclassifying an expense line on a settled bill, and it is often exactly the correction
+  wanted, but the effect on the bill payment linkage has not been observed here. The preview marks
+  such rows with a PAID warning; before enabling bill writes against real data, reclassify one paid
+  bill in a disposable company and check the vendor's transaction history and the A/P ageing either
+  side of it.
+- **Bills that are partly paid, or paid across several payments**, are the case most worth watching.

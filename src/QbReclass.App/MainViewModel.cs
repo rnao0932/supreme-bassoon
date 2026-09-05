@@ -60,6 +60,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private int _batchSize = 25;
     private bool _continueOnIsolatedFailure;
     private bool _enableCheckWrites;
+    private bool _enableBillWrites;
+    private bool _includeBills;
     private string _companyFilePath = string.Empty;
     private CandidateRow? _selectedRow;
 
@@ -321,6 +323,19 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>Whether bills may be modified. Fixed for the life of a connection, like check writes.</summary>
+    public bool EnableBillWrites
+    {
+        get => _enableBillWrites;
+        set => Set(ref _enableBillWrites, value);
+    }
+
+    public bool IncludeBills
+    {
+        get => _includeBills;
+        set { if (Set(ref _includeBills, value)) { RefreshCommands(); } }
+    }
+
     public bool ContinueOnIsolatedFailure
     {
         get => _continueOnIsolatedFailure;
@@ -358,7 +373,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool CanPreview =>
         SourceAccount is not null
         && DestinationAccount is not null
-        && (IncludeCreditCardCharges || IncludeChecks)
+        && (IncludeCreditCardCharges || IncludeChecks || IncludeBills)
         && FromDate <= ToDate;
 
     private bool CanRunBatch =>
@@ -377,7 +392,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             var wantsWrite = WriteModeEnabled;
             var companyFile = CompanyFilePath.Trim();
-            _registry = AdapterRegistry.Create(EnableCheckWrites);
+            _registry = AdapterRegistry.Create(EnableCheckWrites, EnableBillWrites);
 
             var session = await _worker.RunAsync<IQbSession>(() => simulate
                 ? new SimulatedQbSession(DemoCompany.Build(), readOnly: !wantsWrite)
@@ -768,6 +783,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (IncludeChecks)
         {
             types.Add(TransactionType.Check);
+        }
+
+        if (IncludeBills)
+        {
+            types.Add(TransactionType.Bill);
         }
 
         return new Job

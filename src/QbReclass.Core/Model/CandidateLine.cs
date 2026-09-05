@@ -9,6 +9,9 @@ public sealed record CandidateWarning(string Code, string Message)
     public static CandidateWarning Reconciled(ClearedStatus status) =>
         new("RECONCILED", $"Transaction is {status.ToString().ToLowerInvariant()} in QuickBooks; treated as high risk.");
 
+    public static CandidateWarning Paid() =>
+        new("PAID", "Bill has been paid; reclassifying changes what a settled payment was for.");
+
     public static CandidateWarning Billed() =>
         new("BILLED", "Line is marked HasBeenBilled; reclassifying may affect customer invoicing.");
 

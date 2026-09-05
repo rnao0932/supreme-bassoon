@@ -49,6 +49,7 @@ public sealed class CandidateRow : ObservableObject
         TransactionType.CreditCardCharge => "Credit Card Charge",
         TransactionType.CreditCardCredit => "Credit Card Credit",
         TransactionType.Check => "Check",
+        TransactionType.Bill => "Bill",
         _ => Candidate.TxnType.ToString(),
     };
 

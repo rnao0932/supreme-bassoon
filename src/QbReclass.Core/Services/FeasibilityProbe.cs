@@ -351,6 +351,7 @@ public sealed class FeasibilityProbe
                  {
                      ("Credit Card Charge (control)", "CreditCardChargeModRq"),
                      ("Check", "CheckModRq"),
+                     ("Bill", "BillModRq"),
                  })
         {
             try

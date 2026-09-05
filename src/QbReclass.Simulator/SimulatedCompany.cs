@@ -76,6 +76,9 @@ public sealed class SimulatedCompany
     /// </remarks>
     public bool SupportsCheckMod { get; set; }
 
+    /// <summary>Whether this simulated QuickBooks implements <c>BillModRq</c>.</summary>
+    public bool SupportsBillMod { get; set; }
+
     internal string NextEditSequence() =>
         (++_editCounter).ToString(CultureInfo.InvariantCulture);
 
@@ -121,7 +124,8 @@ public sealed class SimulatedCompany
         string? refNumber = null,
         string? memo = null,
         ClearedStatus cleared = ClearedStatus.NotCleared,
-        string? className = null)
+        string? className = null,
+        bool isPaid = false)
     {
         var txnId = $"TXN-{++_txnCounter:D5}";
         var ordinal = 0;
@@ -152,6 +156,7 @@ public sealed class SimulatedCompany
             PostingAccount = QbRef.FromAccount(postingAccount),
             TotalAmount = lines.Sum(l => l.Amount),
             Cleared = cleared,
+            IsPaid = isPaid,
             TimeCreated = DateTimeOffset.UtcNow,
             TimeModified = DateTimeOffset.UtcNow,
             Lines = lines,

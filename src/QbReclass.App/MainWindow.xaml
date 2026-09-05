@@ -115,6 +115,9 @@
                     IsEnabled="{Binding CanChangeConnectionOptions}" Margin="0,0,16,4"
                     ToolTip="Set this before connecting. The session is opened read-only or writable, and that cannot change once it is open — disconnect to change it." />
           <CheckBox Content="Allow check writes (unverified)" IsChecked="{Binding EnableCheckWrites}"
+                    IsEnabled="{Binding CanChangeConnectionOptions}" Margin="0,0,12,4"
+                    ToolTip="Set this before connecting. Intuit's object matrix says CheckMod does not exist; run the spike with --allow-write to find out whether it does on this QuickBooks." />
+          <CheckBox Content="Allow bill writes (unverified)" IsChecked="{Binding EnableBillWrites}"
                     IsEnabled="{Binding CanChangeConnectionOptions}" Margin="0,0,0,4"
                     ToolTip="Set this before connecting. Intuit's object matrix says CheckMod does not exist; run the spike with --allow-write to find out whether it does on this QuickBooks." />
         </WrapPanel>
@@ -145,7 +148,8 @@
           <StackPanel Style="{StaticResource Field}">
             <TextBlock Text="Types" Style="{StaticResource FieldLabel}" />
             <CheckBox Content="Credit card charges" IsChecked="{Binding IncludeCreditCardCharges}" />
-            <CheckBox Content="Checks (preview only)" IsChecked="{Binding IncludeChecks}" />
+            <CheckBox Content="Checks" IsChecked="{Binding IncludeChecks}" />
+            <CheckBox Content="Bills" IsChecked="{Binding IncludeBills}" />
           </StackPanel>
 
         </WrapPanel>

@@ -111,6 +111,11 @@ public sealed class ReclassificationPlanner
             warnings.Add(CandidateWarning.Billed());
         }
 
+        if (snapshot.IsPaid)
+        {
+            warnings.Add(CandidateWarning.Paid());
+        }
+
         if (snapshot.Lines.Count > 1)
         {
             warnings.Add(CandidateWarning.MultiLine(snapshot.Lines.Count));

@@ -204,12 +204,15 @@ public static class QbXmlResponseParser
             RefNumber = Text(ret, "RefNumber"),
             Memo = Text(ret, "Memo"),
             Payee = Ref(ret, "PayeeEntityRef") ?? Ref(ret, "VendorRef") ?? QbRef.Empty,
-            PostingAccount = Ref(ret, "AccountRef") ?? QbRef.Empty,
+            // A bill posts to Accounts Payable and names it APAccountRef; every other type in scope
+            // uses AccountRef for its bank or credit-card account.
+            PostingAccount = Ref(ret, "AccountRef") ?? Ref(ret, "APAccountRef") ?? QbRef.Empty,
             TotalAmount = Money(ret, "Amount") ?? 0m,
             Cleared = ParseCleared(Text(ret, "ClearedStatus")),
             CurrencyCode = ret.Element("CurrencyRef")?.Element("FullName")?.Value,
             ExchangeRate = Money(ret, "ExchangeRate"),
             IsTaxIncluded = Bool(ret, "IsTaxIncluded") ?? false,
+            IsPaid = Bool(ret, "IsPaid") ?? false,
             TimeCreated = Timestamp(ret, "TimeCreated"),
             TimeModified = Timestamp(ret, "TimeModified"),
             Lines = lines,

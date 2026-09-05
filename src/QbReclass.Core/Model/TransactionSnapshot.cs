@@ -92,6 +92,16 @@ public sealed record TransactionSnapshot
     /// <summary>True when line amounts include sales tax, which changes Mod semantics.</summary>
     public bool IsTaxIncluded { get; init; }
 
+    /// <summary>
+    /// True when QuickBooks reports the transaction as settled - a bill that has been paid.
+    /// </summary>
+    /// <remarks>
+    /// Reclassifying an expense line on a paid bill changes what the payment was for after the fact.
+    /// QuickBooks permits it, and it is often exactly what a correction requires, but it is worth
+    /// the operator seeing before they approve it. Surfaced as a warning, not a refusal.
+    /// </remarks>
+    public bool IsPaid { get; init; }
+
     /// <summary>QuickBooks timestamps, retained for the audit record.</summary>
     public DateTimeOffset? TimeCreated { get; init; }
     public DateTimeOffset? TimeModified { get; init; }

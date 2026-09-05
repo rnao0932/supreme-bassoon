@@ -91,8 +91,10 @@ public sealed class SimulatedQbSession : IQbSession
             "AccountQueryRq" => HandleAccountQuery(request, requestId),
             "CreditCardChargeQueryRq" => HandleTransactionQuery(request, requestId, TransactionType.CreditCardCharge),
             "CheckQueryRq" => HandleTransactionQuery(request, requestId, TransactionType.Check),
+            "BillQueryRq" => HandleTransactionQuery(request, requestId, TransactionType.Bill),
             "CreditCardChargeModRq" => HandleCreditCardChargeMod(request, requestId),
             "CheckModRq" => HandleCheckMod(request, requestId),
+            "BillModRq" => HandleBillMod(request, requestId),
             "TxnDisplayAddRq" => Respond("TxnDisplayAddRs", requestId),
             _ => Error(
                 request.Name.LocalName.Replace("Rq", "Rs", StringComparison.Ordinal),
@@ -126,6 +128,22 @@ public sealed class SimulatedQbSession : IQbSession
 
         return HandleTransactionMod(
             request, requestId, "CheckModRs", "CheckMod", TransactionType.Check);
+    }
+
+    /// <summary>Answers a bill modification the way an edition that does, or does not, implement it would.</summary>
+    private string HandleBillMod(XElement request, string requestId)
+    {
+        if (!_company.SupportsBillMod)
+        {
+            return Error(
+                "BillModRs",
+                requestId,
+                500,
+                "The request has not been processed because this QuickBooks version does not support "
+                + "modifying a bill through the SDK.");
+        }
+
+        return HandleTransactionMod(request, requestId, "BillModRs", "BillMod", TransactionType.Bill);
     }
 
     private XElement HostRet()
@@ -490,7 +508,7 @@ public sealed class SimulatedQbSession : IQbSession
             new XElement("TimeModified", (snapshot.TimeModified ?? DateTimeOffset.UtcNow).ToString("O")),
             new XElement("EditSequence", snapshot.EditSequence));
 
-        AddRef(ret, "AccountRef", snapshot.PostingAccount);
+        AddRef(ret, txnType == TransactionType.Bill ? "APAccountRef" : "AccountRef", snapshot.PostingAccount);
         AddRef(ret, "PayeeEntityRef", snapshot.Payee);
         ret.Add(new XElement("TxnDate", snapshot.TxnDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
 
@@ -506,6 +524,11 @@ public sealed class SimulatedQbSession : IQbSession
         if (snapshot.IsTaxIncluded)
         {
             ret.Add(new XElement("IsTaxIncluded", "true"));
+        }
+
+        if (snapshot.IsPaid)
+        {
+            ret.Add(new XElement("IsPaid", "true"));
         }
 
         if (snapshot.CurrencyCode is not null)
