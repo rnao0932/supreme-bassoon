@@ -192,6 +192,15 @@ public sealed class FeasibilityProbe
                 + "(spec section 22, final question)."));
         }
 
+        findings.Add(new ProbeFinding(
+            "Environment",
+            ProbeSeverity.Info,
+            "QuickBooks reports support for qbXML "
+            + (host.SupportedQbXmlVersions.Count > 0
+                ? string.Join(", ", host.SupportedQbXmlVersions)
+                : "(nothing)")
+            + "."));
+
         if (host.SupportedQbXmlVersions.Count == 0)
         {
             findings.Add(new ProbeFinding(

@@ -181,12 +181,27 @@ public sealed class QbComSession : IQbSession
             var host = query.LoadHostInfo();
             var company = query.LoadCompanyIdentity(host, companyFile);
 
+            // Re-negotiate from what QuickBooks reported.
+            //
+            // The version chosen above came from QBXMLVersionsForSession, which not every request
+            // processor answers in a shape this code can read; when it does not, the fallback is the
+            // lowest version this utility can construct. HostQueryRs carries the same list and is
+            // answered by every edition, so the authoritative answer arrives a moment later - and
+            // without this, a 2024 installation that supports qbXML 16.0 would spend the whole
+            // session talking 8.0 and losing every element added since.
+            var effectiveVersions = host.SupportedQbXmlVersions.Count > 0
+                ? host.SupportedQbXmlVersions
+                : versions;
+
+            var effectiveVersion = host.SupportedQbXmlVersions.Count > 0
+                ? QbXmlRequestBuilder.NegotiateVersion(host.SupportedQbXmlVersions)
+                : negotiated;
+
             session.Info = provisional with
             {
                 Company = company,
-                SupportedQbXmlVersions = host.SupportedQbXmlVersions.Count > 0
-                    ? host.SupportedQbXmlVersions
-                    : versions,
+                QbXmlVersion = effectiveVersion,
+                SupportedQbXmlVersions = effectiveVersions,
                 HostBitness = Environment.Is64BitProcess ? "64-bit" : "32-bit",
             };
         }
